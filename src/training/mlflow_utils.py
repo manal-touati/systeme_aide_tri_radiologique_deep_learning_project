@@ -11,6 +11,38 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 
+class MLFlowTracker:
+    """
+    Compatibilité avec les scripts existants.
+
+    Fournit une API simple: start_run, log_params, log_metrics, log_artifacts, end_run.
+    """
+
+    def __init__(self, experiment_name: str = "Default", tracking_uri: str = "http://localhost:5000"):
+        self.experiment_name = experiment_name
+        self.tracking_uri = tracking_uri
+        self.active_run = None
+
+    def start_run(self, run_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None):
+        setup_mlflow(self.experiment_name, self.tracking_uri)
+        self.active_run = start_run(run_name=run_name)
+        if tags:
+            mlflow.set_tags(tags)
+
+    def log_params(self, params: Dict[str, Any]):
+        log_params(params)
+
+    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None):
+        log_metrics(metrics, step)
+
+    def log_artifacts(self, artifacts: Dict[str, str]):
+        for name, path in artifacts.items():
+            log_artifact(path, name)
+
+    def end_run(self):
+        end_run()
+
+
 def setup_mlflow(
     experiment_name: str = "ChestMNIST Classification",
     tracking_uri: str = "http://localhost:5000"

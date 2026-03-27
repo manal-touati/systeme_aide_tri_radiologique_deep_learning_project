@@ -64,34 +64,31 @@ def create_model(model_name: str, num_classes: int = 14, pretrained: bool = True
     if model_name == "cnn_simple":
         model = SimpleCNN(
             num_classes=num_classes,
-            image_size=64,
+            input_size=64,
             dropout_rate=0.3
         )
     elif model_name == "resnet50":
         model = TransferLearningModel(
-            backbone="resnet50",
+            model_name="resnet50",
             num_classes=num_classes,
             pretrained=pretrained,
-            freeze_backbone=False,
-            dropout_rate=0.3
+            freeze_backbone=False
         )
     elif model_name == "efficientnet_b0":
         # EfficientNet via timm (torchvision n'a pas EfficientNet dans les versions anciennes)
         try:
             import timm
             model_timm = timm.create_model('efficientnet_b0', pretrained=pretrained, in_chans=1)
-            # Adapter le classifier final pour 14 classes
             model_timm.classifier = nn.Linear(model_timm.num_features, num_classes)
             model = model_timm
             logger.info("✅ EfficientNet-B0 créé via timm")
         except ImportError:
             logger.warning("⚠️ timm non installé, utilisation de ResNet50 par défaut")
             model = TransferLearningModel(
-                backbone="resnet50",
+                model_name="resnet50",
                 num_classes=num_classes,
                 pretrained=pretrained,
-                freeze_backbone=False,
-                dropout_rate=0.3
+                freeze_backbone=False
             )
     else:
         raise ValueError(f"Modèle non supporté: {model_name}")

@@ -2,7 +2,7 @@
 Chargement de données et pipelines de preprocessing
 """
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, TensorDataset
 import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
@@ -112,43 +112,45 @@ def get_transforms(
 
 
 def create_dataloaders(
-    train_paths: List[str],
-    train_labels: List[int],
-    val_paths: List[str],
-    val_labels: List[int],
-    test_paths: List[str],
-    test_labels: List[int],
+    train_data,
+    train_labels,
+    val_data,
+    val_labels,
+    test_data,
+    test_labels,
     batch_size: int = 32,
     image_size: int = 224,
     num_workers: int = 4,
     augment: bool = True
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     """
-    Créer les dataloaders train/val/test
-    
-    Args:
-        train_paths, train_labels: Données d'entraînement
-        val_paths, val_labels: Données de validation
-        test_paths, test_labels: Données de test
-        batch_size: Taille des batches
-        image_size: Taille des images
-        num_workers: Nombre de workers pour chargement
-        augment: Activer augmentation
-        
-    Returns:
-        (train_loader, val_loader, test_loader)
+    Créer les dataloaders train/val/test.
+
+    Accepte soit des chemins d'images (list/tuple de str), soit des tableaux numpy (N, C, H, W).
     """
     # Transformations
     train_transform = get_transforms(image_size, augment=augment, is_training=True)
     val_transform = get_transforms(image_size, augment=False, is_training=False)
     test_transform = get_transforms(image_size, augment=False, is_training=False)
-    
-    # Datasets
-    train_dataset = ChestRadiographyDataset(train_paths, train_labels, train_transform, image_size)
-    val_dataset = ChestRadiographyDataset(val_paths, val_labels, val_transform, image_size)
-    test_dataset = ChestRadiographyDataset(test_paths, test_labels, test_transform, image_size)
-    
-    # DataLoaders
+
+    def build_dataset(data, labels, transform):
+        # Si data est déjà un array d'images, convertir en TensorDataset
+        if isinstance(data, np.ndarray):
+            # data attendu (N, C, H, W)
+            if data.ndim == 3:
+                data_exp = np.expand_dims(data, 1)
+            else:
+                data_exp = data
+            tensors = torch.tensor(data_exp, dtype=torch.float32)
+            lbls = torch.tensor(labels, dtype=torch.float32)
+            return TensorDataset(tensors, lbls)
+        # Sinon, considérer que ce sont des chemins
+        return ChestRadiographyDataset(data, labels, transform, image_size)
+
+    train_dataset = build_dataset(train_data, train_labels, train_transform)
+    val_dataset = build_dataset(val_data, val_labels, val_transform)
+    test_dataset = build_dataset(test_data, test_labels, test_transform)
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -156,7 +158,7 @@ def create_dataloaders(
         num_workers=num_workers,
         pin_memory=True
     )
-    
+
     val_loader = DataLoader(
         val_dataset,
         batch_size=batch_size,
@@ -164,7 +166,7 @@ def create_dataloaders(
         num_workers=num_workers,
         pin_memory=True
     )
-    
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
@@ -172,12 +174,12 @@ def create_dataloaders(
         num_workers=num_workers,
         pin_memory=True
     )
-    
-    logger.info(f"Dataloaders créés :")
+
+    logger.info("Dataloaders créés :")
     logger.info(f"  Train: {len(train_dataset)} images")
     logger.info(f"  Val: {len(val_dataset)} images")
     logger.info(f"  Test: {len(test_dataset)} images")
-    
+
     return train_loader, val_loader, test_loader
 
 
@@ -361,6 +363,11 @@ def load_chestmnist_processed(data_dir: str = "data", target_size: int = 28) -> 
     logger.info(f"  Test: {X_test.shape}")
     
     return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+def load_chestmnist_data(data_dir: str = "./data", target_size: int = 64) -> Tuple:
+    """Compatibilité avec les scripts: charge ChestMNIST preprocessé."""
+    return load_chestmnist_processed(data_dir=data_dir, target_size=target_size)
 
 
 if __name__ == "__main__":

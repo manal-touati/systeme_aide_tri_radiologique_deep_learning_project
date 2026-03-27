@@ -18,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from models.cnn_simple import SimpleCNN
 from models.transfer_learning import TransferLearningModel
-from models.vit import VisionTransformer
 from models.autoencoder import VariationalAutoencoder
 from preprocessing.data_loader import get_transforms
 from utils.config import get_config
@@ -55,7 +54,7 @@ with st.sidebar:
     st.subheader("Modèle de Classification")
     model_choice = st.selectbox(
         "Sélectionner un modèle",
-        ["CNN Simple", "ResNet50 Transfer Learning", "Vision Transformer"]
+        ["CNN Simple", "ResNet50 Transfer Learning", "EfficientNet-B0"]
     )
     
     # Détection d'anomalies
@@ -251,7 +250,7 @@ with tab4:
     
     | Composant | Détail |
     |-----------|--------|
-    | **Classification** | 3 architectures (CNN, Transfer Learning, ViT) |
+    | **Classification** | 3 architectures (CNN, Transfer Learning, EfficientNet-B0) |
     | **Données** | ChestMNIST, NIH CXR14 |
     | **Pathologies** | 14 classes (Pneumonie, TB, etc.) |
     | **Normalisation** | Prétraitement standard pour images médicales |
@@ -259,7 +258,6 @@ with tab4:
     ### Modèles
     - CNN Simple : Baseline rapide
     - ResNet50 : Transfer Learning (pré-entraîné ImageNet)
-    - Vision Transformer : État de l'art
     
     ### Détection d'Anomalies
     - Technique : VAE (Variational Autoencoder)
@@ -279,7 +277,7 @@ with tab4:
     st.subheader("📊 Métriques de Performance")
     
     metrics_data = {
-        "Modèle": ["CNN Simple", "ResNet50", "ViT"],
+        "Modèle": ["CNN Simple", "ResNet50", "EfficientNet-B0"],
         "Accuracy": [0.78, 0.92, 0.95],
         "ROC-AUC": [0.82, 0.94, 0.96],
         "F1-Score": [0.75, 0.91, 0.94]

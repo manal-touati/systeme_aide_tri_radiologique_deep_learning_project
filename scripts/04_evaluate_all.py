@@ -76,14 +76,13 @@ def load_supervised_model(
     
     # Créer le modèle
     if model_name == "cnn_simple":
-        model = SimpleCNN(num_classes=num_classes, image_size=64, dropout_rate=0.3)
+        model = SimpleCNN(num_classes=num_classes, input_size=64, dropout_rate=0.3)
     elif model_name == "resnet50":
         model = TransferLearningModel(
-            backbone="resnet50",
+            model_name="resnet50",
             num_classes=num_classes,
             pretrained=False,
-            freeze_backbone=False,
-            dropout_rate=0.3
+            freeze_backbone=False
         )
     elif model_name == "efficientnet_b0":
         try:
@@ -93,11 +92,10 @@ def load_supervised_model(
         except ImportError:
             logger.warning("⚠️ timm non installé, utilisation de ResNet50 par défaut")
             model = TransferLearningModel(
-                backbone="resnet50",
+                model_name="resnet50",
                 num_classes=num_classes,
                 pretrained=False,
-                freeze_backbone=False,
-                dropout_rate=0.3
+                freeze_backbone=False
             )
     else:
         raise ValueError(f"Modèle supervisé non reconnu: {model_name}")

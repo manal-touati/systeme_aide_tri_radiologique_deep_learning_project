@@ -257,13 +257,23 @@ def train_model(model, train_loader, val_loader, epochs, device, model_name):
         train_loss = 0.0
         
         for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
-            if len(batch) == 4:  # Multimodal
+            if len(batch) == 4:
                 images, texts, offsets, labels = batch
-                images, texts, offsets, labels = images.to(device), texts.to(device), offsets.to(device), labels.to(device)
-                outputs = model(images, texts, offsets)
-            else:  # Image ou Text seul
+                images = images.to(device)
+                texts = texts.to(device)
+                offsets = offsets.to(device)
+                labels = labels.to(device)
+
+                if isinstance(model, TextOnlyModel):
+                    outputs = model(texts, offsets)
+                elif isinstance(model, MultimodalFusionModel):
+                    outputs = model(images, texts, offsets)
+                else:
+                    outputs = model(images)
+            else:
                 images, labels = batch
-                images, labels = images.to(device), labels.to(device)
+                images = images.to(device)
+                labels = labels.to(device)
                 outputs = model(images)
             
             optimizer.zero_grad()
@@ -283,11 +293,21 @@ def train_model(model, train_loader, val_loader, epochs, device, model_name):
             for batch in val_loader:
                 if len(batch) == 4:
                     images, texts, offsets, labels = batch
-                    images, texts, offsets, labels = images.to(device), texts.to(device), offsets.to(device), labels.to(device)
-                    outputs = model(images, texts, offsets)
+                    images = images.to(device)
+                    texts = texts.to(device)
+                    offsets = offsets.to(device)
+                    labels = labels.to(device)
+
+                    if isinstance(model, TextOnlyModel):
+                        outputs = model(texts, offsets)
+                    elif isinstance(model, MultimodalFusionModel):
+                        outputs = model(images, texts, offsets)
+                    else:
+                        outputs = model(images)
                 else:
                     images, labels = batch
-                    images, labels = images.to(device), labels.to(device)
+                    images = images.to(device)
+                    labels = labels.to(device)
                     outputs = model(images)
                 
                 loss = criterion(outputs, labels)
@@ -344,8 +364,12 @@ def main():
     # 1. Image only
     model_img = ImageOnlyModel(num_classes=15).to(args.device)
     results['image_only'] = train_model(model_img, train_loader, val_loader, args.epochs, args.device, 'multimodal_image_only')
-    
-    # 2. Multimodal
+
+    # 2. Texte only
+    model_txt = TextOnlyModel(num_classes=15).to(args.device)
+    results['text_only'] = train_model(model_txt, train_loader, val_loader, args.epochs, args.device, 'multimodal_text_only')
+
+    # 3. Multimodal
     model_multi = MultimodalFusionModel(num_classes=15, fusion_type=args.fusion).to(args.device)
     results['multimodal'] = train_model(model_multi, train_loader, val_loader, args.epochs, args.device, f'multimodal_{args.fusion}_fusion')
     
