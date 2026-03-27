@@ -1,0 +1,56 @@
+{
+  "model_name": "resnet50",
+  "epochs": 2,
+  "batch_size": 32,
+  "learning_rate": 0.001,
+  "device": "cpu",
+  "best_epoch": 0,
+  "best_val_f1": 0.0,
+  "test_loss": 0.18389497736622806,
+  "test_metrics": {
+    "hamming_loss": 0.0525692379211748,
+    "exact_match": 0.5317166674096198,
+    "precision_micro": 0.0,
+    "precision_macro": 0.0,
+    "precision_weighted": 0.0,
+    "recall_micro": 0.0,
+    "recall_macro": 0.0,
+    "recall_weighted": 0.0,
+    "f1_micro": 0.0,
+    "f1_macro": 0.0,
+    "f1_weighted": 0.0,
+    "roc_auc_micro": 0.7729318889015041,
+    "roc_auc_macro": 0.6375245168128332,
+    "roc_auc_weighted": 0.6393624762422719,
+    "pr_auc_micro": 0.17694974343646427,
+    "pr_auc_macro": 0.08586641757202829,
+    "pr_auc_weighted": 0.15537577404557293
+  },
+  "training_history": {
+    "train_loss": [
+      0.18388736420536936,
+      0.17826988205732835
+    ],
+    "val_loss": [
+      0.30536849062327304,
+      0.17747027274125662
+    ],
+    "val_f1": [
+      0.0,
+      0.0
+    ],
+    "val_precision": [
+      0.0,
+      0.0
+    ],
+    "val_recall": [
+      0.0,
+      0.0
+    ],
+    "learning_rate": [
+      0.0005,
+      0.0
+    ]
+  },
+  "timestamp": "2026-03-27T21:17:57.491015"
+}

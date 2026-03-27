@@ -1,0 +1,122 @@
+# Configuration globale du projet
+
+# ============================================================================
+# DONNÉES
+# ============================================================================
+data:
+  dataset_name: "ChestMNIST"  # ChestMNIST or NIH
+  image_size: 224
+  num_classes: 14
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  seed: 42
+  normalize: true
+  augmentation: true
+
+# ============================================================================
+# MODÈLES SUPERVISÉS
+# ============================================================================
+models:
+  cnn_simple:
+    name: "CNN Simple"
+    enabled: true
+    epochs: 100
+    batch_size: 32
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    dropout: 0.3
+
+  transfer_learning:
+    name: "ResNet50 Transfer Learning"
+    enabled: true
+    backbone: "resnet50"  # resnet50, densenet121, efficientnet_b0, etc.
+    pretrained: true
+    freeze_backbone: false
+    epochs: 50
+    batch_size: 32
+    learning_rate: 0.0001
+    weight_decay: 0.0001
+    dropout: 0.3
+
+  vit:
+    name: "Vision Transformer"
+    enabled: true
+    model_name: "vit_base_patch16_224"  # timm model name
+    pretrained: true
+    epochs: 50
+    batch_size: 16
+    learning_rate: 0.0001
+    weight_decay: 0.0001
+    dropout: 0.1
+
+# ============================================================================
+# DÉTECTION D'ANOMALIES
+# ============================================================================
+anomaly_detection:
+  model_type: "VAE"  # AE or VAE
+  enabled: true
+  latent_dim: 64
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  kl_weight: 0.0001  # Pour VAE
+  threshold_percentile: 95
+
+# ============================================================================
+# MULTIMODALITÉ
+# ============================================================================
+multimodal:
+  enabled: true
+  image_encoder: "resnet50"
+  text_encoder: "bert-base-uncased"  # ou distilbert, etc.
+  fusion_type: "late"  # early, late, hybrid
+  epochs: 50
+  batch_size: 32
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  hidden_dim: 512
+
+# ============================================================================
+# APPRENTISSAGE
+# ============================================================================
+training:
+  device: "cuda"  # cuda or cpu
+  optimizer: "adam"
+  scheduler: "cosine"  # none, linear, cosine, step
+  early_stopping: true
+  patience: 10
+  seed: 42
+  workers: 4
+
+# ============================================================================
+# MLflow
+# ============================================================================
+mlflow:
+  enabled: true
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "Chest Radiography Classification"
+  artifact_location: "./mlruns"
+
+# ============================================================================
+# ÉVALUATION
+# ============================================================================
+evaluation:
+  metrics:
+    - accuracy
+    - roc_auc
+    - f1_score
+    - precision
+    - recall
+  use_class_weights: true
+  compute_pr_curve: true
+
+# ============================================================================
+# DÉMONSTRATEUR
+# ============================================================================
+app:
+  framework: "streamlit"  # streamlit, gradio, or flask
+  host: "localhost"
+  port: 8501
+  debug: true
