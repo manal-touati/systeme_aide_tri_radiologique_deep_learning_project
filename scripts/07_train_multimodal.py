@@ -29,6 +29,7 @@ sys.path.insert(0, str(project_root))
 
 from src.preprocessing.data_loader import get_transforms
 from PIL import Image
+from torchvision import transforms
 
 logging.basicConfig(
     level=logging.INFO,
