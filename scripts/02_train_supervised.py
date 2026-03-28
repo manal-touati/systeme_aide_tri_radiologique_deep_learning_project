@@ -59,7 +59,7 @@ def create_model(model_name: str, num_classes: int = 14, pretrained: bool = True
     Returns:
         Modèle PyTorch
     """
-    logger.info(f"🔧 Création du modèle: {model_name}")
+    logger.info(f"Creation du modele: {model_name}")
     
     if model_name == "cnn_simple":
         model = SimpleCNN(
@@ -81,9 +81,9 @@ def create_model(model_name: str, num_classes: int = 14, pretrained: bool = True
             model_timm = timm.create_model('efficientnet_b0', pretrained=pretrained, in_chans=1)
             model_timm.classifier = nn.Linear(model_timm.num_features, num_classes)
             model = model_timm
-            logger.info("✅ EfficientNet-B0 créé via timm")
+            logger.info("EfficientNet-B0 cree via timm")
         except ImportError:
-            logger.warning("⚠️ timm non installé, utilisation de ResNet50 par défaut")
+            logger.warning("timm non installe, utilisation de ResNet50 par defaut")
             model = TransferLearningModel(
                 model_name="resnet50",
                 num_classes=num_classes,
@@ -236,7 +236,7 @@ def train_model(
     models_path.mkdir(parents=True, exist_ok=True)
     
     logger.info("=" * 70)
-    logger.info("🚀 ENTRAÎNEMENT DU MODÈLE SUPERVISÉ")
+    logger.info("ENTRAINEMENT DU MODELE SUPERVISE")
     logger.info("=" * 70)
     logger.info(f"Configuration:")
     logger.info(f"  Model: {model_name}")
@@ -247,7 +247,7 @@ def train_model(
     logger.info(f"  AMP: {use_amp}")
     
     # Charger les données
-    logger.info("\n📂 Chargement des données...")
+    logger.info("\nChargement des donnees...")
     X_train, y_train, X_val, y_val, X_test, y_test = load_chestmnist_data(
         data_dir=data_dir,
         target_size=64
@@ -269,7 +269,7 @@ def train_model(
     # Afficher info du modèle
     num_params = sum(p.numel() for p in model.parameters())
     num_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    logger.info(f"\n🧠 Modèle créé:")
+    logger.info(f"\nModele cree:")
     logger.info(f"  Total params: {num_params:,}")
     logger.info(f"  Trainable params: {num_trainable:,}")
     
@@ -311,7 +311,7 @@ def train_model(
         })
     
     # Entraînement
-    logger.info("\n⏱️ Démarrage de l'entraînement...")
+    logger.info("\nDemarrage de l'entrainement...")
     best_f1 = 0.0
     best_epoch = 0
     training_history = {
@@ -382,13 +382,13 @@ def train_model(
                 'metrics': metrics
             }, model_path)
             
-            logger.info(f"  ✅ Meilleur modèle sauvegardé: {model_path}")
+            logger.info(f"  Meilleur modele sauvegarde: {model_path}")
     
     # Évaluation finale sur test set
-    logger.info("\n📊 Évaluation finale sur le test set...")
+    logger.info("\nEvaluation finale sur le test set...")
     test_loss, test_metrics = validate(model, test_loader, criterion, device)
     
-    logger.info("\n✅ Résultats du test set:")
+    logger.info("\nResultats du test set:")
     print_metrics_summary(test_metrics)
     
     # Sauvegarder le modèle final
@@ -400,7 +400,7 @@ def train_model(
         'test_metrics': test_metrics,
         'training_history': training_history
     }, model_path)
-    logger.info(f"✅ Modèle final sauvegardé: {model_path}")
+    logger.info(f"Modele final sauvegarde: {model_path}")
     
     # Sauvegarder les résultats en JSON
     results = {
@@ -423,7 +423,7 @@ def train_model(
     results_path = models_path / f"{model_name}_results.json"
     with open(results_path, 'w') as f:
         json.dump(results, f, indent=2)
-    logger.info(f"✅ Résultats sauvegardés: {results_path}")
+    logger.info(f"Resultats sauvegardes: {results_path}")
     
     # MLflow - finalisation
     if mlflow_tracker:
@@ -435,7 +435,7 @@ def train_model(
         mlflow_tracker.end_run()
     
     logger.info("\n" + "=" * 70)
-    logger.info("✅ Entraînement terminé!")
+    logger.info("Entrainement termine!")
     logger.info("=" * 70)
     
     return model, results

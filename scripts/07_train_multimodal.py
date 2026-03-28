@@ -198,9 +198,9 @@ def load_nih_multimodal_data(data_dir="./data"):
     csv_path = Path(data_dir) / "processed" / "nih_sample_metadata.csv"
     
     if not npz_path.exists():
-        raise FileNotFoundError(f"❌ Fichier non trouvé : {npz_path}")
+        raise FileNotFoundError(f"Fichier non trouve : {npz_path}")
     
-    logger.info(f"📂 Chargement depuis {npz_path}")
+    logger.info(f"Chargement depuis {npz_path}")
     
     data = np.load(npz_path, allow_pickle=True)
     df = pd.read_csv(csv_path)
@@ -213,7 +213,7 @@ def load_nih_multimodal_data(data_dir="./data"):
     labels_val = data['labels_val']
     labels_test = data['labels_test']
     
-    logger.info(f"✅ Données chargées:")
+    logger.info(f"Donnees chargees:")
     logger.info(f"   Train: {len(X_train)} images")
     logger.info(f"   Val: {len(X_val)} images")
     logger.info(f"   Test: {len(X_test)} images")
@@ -243,7 +243,7 @@ def collate_multimodal(batch):
 
 def train_model(model, train_loader, val_loader, epochs, device, model_name):
     """Entraîner un modèle"""
-    logger.info(f"\n🎯 Entraînement : {model_name}")
+    logger.info(f"\nEntrainement : {model_name}")
     logger.info(f"   Paramètres: {sum(p.numel() for p in model.parameters()):,}")
     
     criterion = nn.BCEWithLogitsLoss()
@@ -323,7 +323,7 @@ def train_model(model, train_loader, val_loader, epochs, device, model_name):
             Path("models").mkdir(exist_ok=True)
             torch.save(model.state_dict(), save_path)
     
-    logger.info(f"✅ Meilleur Val Loss: {best_val_loss:.4f}")
+    logger.info(f"Meilleur Val Loss: {best_val_loss:.4f}")
     
     return best_val_loss
 
@@ -337,7 +337,7 @@ def main():
     args = parser.parse_args()
     
     logger.info("=" * 60)
-    logger.info("🔗 ENTRAÎNEMENT MULTIMODAL (IMAGE + TEXTE)")
+    logger.info("ENTRAINEMENT MULTIMODAL (IMAGE + TEXTE)")
     logger.info("=" * 60)
     logger.info(f"Configuration:")
     logger.info(f"  Epochs: {args.epochs}")
@@ -380,7 +380,7 @@ def main():
     
     logger.info("")
     logger.info("=" * 60)
-    logger.info("✅ COMPARAISON DES MODÈLES")
+    logger.info("COMPARAISON DES MODELES")
     logger.info("=" * 60)
     logger.info(f"Image seule : Val Loss = {results['image_only']:.4f}")
     logger.info(f"Multimodal  : Val Loss = {results['multimodal']:.4f}")

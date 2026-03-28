@@ -42,7 +42,7 @@ def main():
     args = parser.parse_args()
     
     logger.info("=" * 60)
-    logger.info("📦 PRÉPARATION DES DONNÉES CHESTMNIST")
+    logger.info("PREPARATION DES DONNEES CHESTMNIST")
     logger.info("=" * 60)
     logger.info(f"Configuration:")
     logger.info(f"  - Répertoire: {args.data_dir}")
@@ -60,9 +60,9 @@ def main():
         
         logger.info("")
         logger.info("=" * 60)
-        logger.info("✅ PRÉPARATION TERMINÉE AVEC SUCCÈS")
+        logger.info("PREPARATION TERMINEE AVEC SUCCES")
         logger.info("=" * 60)
-        logger.info(f"📁 Fichier de sortie: {output_file}")
+        logger.info(f"Fichier de sortie: {output_file}")
         logger.info("")
         logger.info("Prochaines étapes:")
         logger.info("  1. Entraîner les modèles supervisés:")
@@ -74,7 +74,7 @@ def main():
         
     except Exception as e:
         logger.error("=" * 60)
-        logger.error("❌ ERREUR LORS DE LA PRÉPARATION")
+        logger.error("ERREUR LORS DE LA PREPARATION")
         logger.error("=" * 60)
         logger.error(f"Message: {e}")
         logger.error("")

@@ -246,7 +246,7 @@ def train_autoencoder(
     ae_type = "VAE" if use_vae else "Autoencoder"
     
     logger.info("=" * 70)
-    logger.info(f"🚀 ENTRAÎNEMENT D'UN {ae_type} POUR DÉTECTION D'ANOMALIES")
+    logger.info(f"ENTRAINEMENT D'UN {ae_type} POUR DETECTION D'ANOMALIES")
     logger.info("=" * 70)
     logger.info(f"Configuration:")
     logger.info(f"  Type: {ae_type}")
@@ -258,7 +258,7 @@ def train_autoencoder(
     logger.info(f"  AMP: {use_amp}")
     
     # Charger les données
-    logger.info("\n📂 Chargement des données...")
+    logger.info("\nChargement des donnees...")
     X_train, y_train, X_val, y_val, X_test, y_test = load_chestmnist_data(
         data_dir=data_dir,
         target_size=64
@@ -274,7 +274,7 @@ def train_autoencoder(
     )
     
     # Créer le modèle
-    logger.info(f"\n🔧 Création du {ae_type}...")
+    logger.info(f"\nCreation du {ae_type}...")
     if use_vae:
         model = VariationalAutoencoder(
             latent_dim=latent_dim,
@@ -291,7 +291,7 @@ def train_autoencoder(
     
     # Info du modèle
     num_params = sum(p.numel() for p in model.parameters())
-    logger.info(f"✅ {ae_type} créé:")
+    logger.info(f"{ae_type} cree:")
     logger.info(f"  Total params: {num_params:,}")
     logger.info(f"  Latent dim: {latent_dim}")
     
@@ -329,7 +329,7 @@ def train_autoencoder(
         })
     
     # Entraînement
-    logger.info("\n⏱️ Démarrage de l'entraînement...")
+    logger.info("\nDemarrage de l'entrainement...")
     best_val_loss = float('inf')
     training_history = {
         'train_loss': [],
@@ -386,10 +386,10 @@ def train_autoencoder(
                 'latent_dim': latent_dim
             }, model_path)
             
-            logger.info(f"  ✅ Meilleur modèle sauvegardé: {model_path}")
+            logger.info(f"  Meilleur modele sauvegarde: {model_path}")
     
     # Calculer les scores d'anomalie sur tous les datasets
-    logger.info("\n📊 Calcul des scores d'anomalie...")
+    logger.info("\nCalcul des scores d'anomalie...")
     
     train_scores = compute_anomaly_scores(
         model, train_loader, device, use_vae=use_vae
@@ -401,7 +401,7 @@ def train_autoencoder(
         model, test_loader, device, use_vae=use_vae
     )
     
-    logger.info(f"✅ Scores d'anomalie calculés:")
+    logger.info(f"Scores d'anomalie calcules:")
     logger.info(f"  Train: mean={train_scores.mean():.4f}, std={train_scores.std():.4f}, "
                 f"min={train_scores.min():.4f}, max={train_scores.max():.4f}")
     logger.info(f"  Val: mean={val_scores.mean():.4f}, std={val_scores.std():.4f}, "
@@ -425,7 +425,7 @@ def train_autoencoder(
             'test_std': float(test_scores.std())
         }
     }, model_path)
-    logger.info(f"✅ Modèle final sauvegardé: {model_path}")
+    logger.info(f"Modele final sauvegarde: {model_path}")
     
     # Sauvegarder les résultats en JSON
     results = {
@@ -469,7 +469,7 @@ def train_autoencoder(
     results_path = models_path / f"{ae_type.lower()}_results.json"
     with open(results_path, 'w') as f:
         json.dump(results, f, indent=2)
-    logger.info(f"✅ Résultats sauvegardés: {results_path}")
+    logger.info(f"Resultats sauvegardes: {results_path}")
     
     # Sauvegarder les scores d'anomalie
     scores_path = models_path / f"{ae_type.lower()}_scores.npz"
@@ -477,7 +477,7 @@ def train_autoencoder(
              train_scores=train_scores,
              val_scores=val_scores,
              test_scores=test_scores)
-    logger.info(f"✅ Scores d'anomalie sauvegardés: {scores_path}")
+    logger.info(f"Scores d'anomalie sauvegardes: {scores_path}")
     
     # MLflow - finalisation
     if mlflow_tracker:
@@ -489,7 +489,7 @@ def train_autoencoder(
         mlflow_tracker.end_run()
     
     logger.info("\n" + "=" * 70)
-    logger.info("✅ Entraînement du modèle d'anomalies terminé!")
+    logger.info("Entrainement du modele d'anomalies termine!")
     logger.info("=" * 70)
     
     return model, results

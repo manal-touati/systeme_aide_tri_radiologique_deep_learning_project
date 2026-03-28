@@ -1,26 +1,24 @@
-"""
-Application Streamlit - Interface de démonstrateur
-"""
+"""Streamlit UI avec vraie inférence (classification + anomalies)."""
 import streamlit as st
 import torch
+import torch.nn.functional as F
 import numpy as np
+import torch.serialization as tser
 from PIL import Image
-import logging
 from pathlib import Path
 import sys
 
-# Setup
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Ajouter la racine du projet au PYTHONPATH pour que "src" soit résolu
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-# Ajouter src au path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Autoriser les scalaires numpy dans torch.load (PyTorch ≥2.6 weights_only)
+tser.add_safe_globals([np.core.multiarray.scalar])
 
-from models.cnn_simple import SimpleCNN
-from models.transfer_learning import TransferLearningModel
-from models.autoencoder import VariationalAutoencoder
-from preprocessing.data_loader import get_transforms
-from utils.config import get_config
+from src.models.cnn_simple import SimpleCNN
+from src.models.transfer_learning import TransferLearningModel
+from src.preprocessing.data_loader import get_transforms
+from src.utils.metrics_new import CHEST_PATHOLOGIES
 
 # ============================================================================
 # CONFIG
@@ -39,8 +37,8 @@ Détection de pathologies thoraciques à partir de radiographies X.
 
 **Capacités:**
 - Classification supervisée (14 pathologies)
-- Détection d'anomalies (images atypiques)
-- Analyse multimodale (image + compte-rendu)
+- Détection d'anomalies (autoencoder)
+- Analyse multimodale (placeholder UI)
 """)
 
 # ============================================================================
@@ -60,11 +58,10 @@ with st.sidebar:
     # Détection d'anomalies
     st.subheader("Détection d'Anomalies")
     enable_anomaly = st.checkbox("Activer détection d'anomalies", value=True)
-    if enable_anomaly:
-        anomaly_threshold = st.slider(
-            "Seuil d'anomalie (percentile)",
-            min_value=50, max_value=99, value=95, step=1
-        )
+    anomaly_threshold = st.slider(
+        "Seuil d'anomalie (score MSE)",
+        min_value=0.1, max_value=2.0, value=0.8, step=0.05
+    ) if enable_anomaly else 0.8
     
     # Multimodalité
     st.subheader("Multimodalité")
@@ -81,6 +78,91 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "📝 Multimodalité",
     "ℹ️ Information"
 ])
+
+# ============================================================================
+# HELPERS (modèles + prétraitement)
+# ============================================================================
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+MODEL_DIR = Path(__file__).parent.parent / "models"
+
+
+class SimpleAutoencoder(torch.nn.Module):
+    """Doit correspondre au modèle entraîné dans scripts/06_train_autoencoder.py (64x64)."""
+    def __init__(self, latent_dim: int = 64):
+        super().__init__()
+        self.encoder = torch.nn.Sequential(
+            torch.nn.Conv2d(1, 32, 3, stride=2, padding=1),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 64, 3, stride=2, padding=1),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(64, 128, 3, stride=2, padding=1),
+            torch.nn.ReLU(),
+        )
+        self.fc_encode = torch.nn.Linear(128 * 8 * 8, latent_dim)
+        self.fc_decode = torch.nn.Linear(latent_dim, 128 * 8 * 8)
+        self.decoder = torch.nn.Sequential(
+            torch.nn.ConvTranspose2d(128, 64, 3, stride=2, padding=1, output_padding=1),
+            torch.nn.ReLU(),
+            torch.nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
+            torch.nn.ReLU(),
+            torch.nn.ConvTranspose2d(32, 1, 3, stride=2, padding=1, output_padding=1),
+            torch.nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        z = self.encoder(x)
+        z = z.view(z.size(0), -1)
+        z = self.fc_encode(z)
+        x = self.fc_decode(z)
+        x = x.view(x.size(0), 128, 8, 8)
+        x = self.decoder(x)
+        return x, z
+
+
+def load_checkpoint(model: torch.nn.Module, ckpt_path: Path):
+    if not ckpt_path.exists():
+        st.error(f"Checkpoint manquant: {ckpt_path}")
+        return None
+    try:
+        state = torch.load(ckpt_path, map_location=DEVICE, weights_only=False)
+    except TypeError:
+        state = torch.load(ckpt_path, map_location=DEVICE)
+    # Autoriser cas où l'état est sous clé 'model_state_dict'
+    if isinstance(state, dict) and 'model_state_dict' in state:
+        state = state['model_state_dict']
+    model.load_state_dict(state, strict=False)
+    model.to(DEVICE)
+    model.eval()
+    return model
+
+
+@st.cache_resource(show_spinner=False)
+def get_classifier(model_name: str):
+    if model_name == "CNN Simple":
+        model = SimpleCNN(num_classes=len(CHEST_PATHOLOGIES), input_size=64)
+        ckpt = MODEL_DIR / "cnn_simple_best.pt"
+    elif model_name == "ResNet50 Transfer Learning":
+        model = TransferLearningModel(model_name="resnet50", num_classes=len(CHEST_PATHOLOGIES), pretrained=False)
+        ckpt = MODEL_DIR / "resnet50_final.pt"
+    else:  # EfficientNet-B0
+        import timm
+        model = timm.create_model('efficientnet_b0', pretrained=False, in_chans=1)
+        model.classifier = torch.nn.Linear(model.num_features, len(CHEST_PATHOLOGIES))
+        ckpt = MODEL_DIR / "efficientnet_b0_best.pt"
+    return load_checkpoint(model, ckpt)
+
+
+@st.cache_resource(show_spinner=False)
+def get_autoencoder():
+    model = SimpleAutoencoder(latent_dim=64)
+    ckpt = MODEL_DIR / "autoencoder_best.pt"
+    return load_checkpoint(model, ckpt)
+
+
+def preprocess_image(pil_img: Image.Image, size: int = 64) -> torch.Tensor:
+    transform = get_transforms(image_size=size, augment=False, is_training=False)
+    return transform(pil_img.convert('L')).unsqueeze(0).to(DEVICE)
 
 # ============================================================================
 # TAB 1 : CLASSIFICATION
@@ -107,50 +189,34 @@ with tab1:
         st.subheader("Résultats")
         
         if uploaded_file:
-            # Traiter l'image
             try:
-                # Redimensionner
-                image = image.resize((224, 224))
-                
-                # Transformer
-                transform = get_transforms(image_size=224, augment=False, is_training=False)
-                img_tensor = transform(image).unsqueeze(0)  # Ajouter batch dim
-                
-                st.success("✓ Image chargée et prétraitée")
-                
-                # Logique de modèle (placeholder)
-                st.info("Modèle sélectionné : " + model_choice)
-                
-                # Afficher prédiction fictive
+                img_tensor = preprocess_image(image, size=64)
+                st.success("✓ Image prétraitée (64x64, grayscale)")
+
                 if st.button("🔍 Lancer la Prédiction"):
-                    with st.spinner("Analyse en cours..."):
-                        # Logique de classification (à implémenter)
-                        st.write("#### Prédictions par pathologie")
-                        
-                        # Top 5 résultats
-                        results = {
-                            "Pneumonie": 0.87,
-                            "Tuberculose": 0.12,
-                            "Pneumothorax": 0.01,
-                            "Normal": 0.00,
-                            "Autres": 0.00
-                        }
-                        
-                        # Barchart
+                    with st.spinner("Chargement du modèle et inférence..."):
+                        model = get_classifier(model_choice)
+                        if model is None:
+                            st.stop()
+                        with torch.no_grad():
+                            logits = model(img_tensor)
+                            probs = torch.sigmoid(logits).cpu().numpy().flatten()
+
+                        # Top 5
+                        top_idx = probs.argsort()[::-1][:5]
+                        results = {CHEST_PATHOLOGIES[i]: float(probs[i]) for i in top_idx}
+                        st.write("#### Prédictions par pathologie (Top 5)")
                         st.bar_chart(results)
-                        
-                        # Prédiction principale
-                        top_class = max(results, key=results.get)
-                        top_prob = results[top_class]
+
+                        top_class = CHEST_PATHOLOGIES[top_idx[0]]
+                        top_prob = probs[top_idx[0]]
                         st.metric(
-                            label="🎯 Prédiction Principale",
-                            value=f"{top_class}",
+                            label="🎯 Prédiction principale",
+                            value=top_class,
                             delta=f"{top_prob*100:.1f}%"
                         )
-                        
-                        # Confiance
-                        st.progress(top_prob, text=f"Confiance : {top_prob*100:.1f}%")
-            
+                        st.progress(float(top_prob), text=f"Confiance : {top_prob*100:.1f}%")
+
             except Exception as e:
                 st.error(f"Erreur : {str(e)}")
 
@@ -167,20 +233,27 @@ with tab2:
     with col1:
         st.write("Ce système détecte les radiographies atypiques, rares ou hors-distribution.")
         if enable_anomaly:
-            st.info(f"Seuil d'anomalie fixé à {anomaly_threshold}e percentile")
-            
+            st.info(f"Seuil d'anomalie manuel (score de reconstruction) ≥ {anomaly_threshold:.2f}")
+
             st.subheader("Score d'Anomalie")
-            anomaly_score = np.random.uniform(0, 1)  # Placeholder
-            
-            if anomaly_score > 0.7:
-                status = "⚠️ ANORMAL"
-                color = "red"
+            if uploaded_file:
+                try:
+                    img_tensor = preprocess_image(image, size=64)
+                    model_ae = get_autoencoder()
+                    if model_ae is None:
+                        st.stop()
+                    with torch.no_grad():
+                        recon, _ = model_ae(img_tensor)
+                        mse = F.mse_loss(recon, img_tensor, reduction='none').mean().item()
+                    threshold_score = anomaly_threshold
+                    status = "⚠️ ANORMAL" if mse >= threshold_score else "✓ NORMAL"
+                    color = "red" if mse >= threshold_score else "green"
+                    st.markdown(f"<h2 style='color:{color}'>{status}</h2>", unsafe_allow_html=True)
+                    st.progress(float(min(mse, 2.0) / 2.0), text=f"Score : {mse:.3f}")
+                except Exception as e:
+                    st.error(f"Erreur anomalie: {e}")
             else:
-                status = "✓ NORMAL"
-                color = "green"
-            
-            st.markdown(f"<h2 style='color:{color}'>{status}</h2>", unsafe_allow_html=True)
-            st.progress(anomaly_score, text=f"Score : {anomaly_score:.2f}")
+                st.warning("Charge une image dans l'onglet Classification pour évaluer l'anomalie.")
         else:
             st.warning("Détection d'anomalies désactivée")
     
@@ -188,13 +261,12 @@ with tab2:
         st.subheader("Visualisation")
         st.write("Erreur de reconstruction : ")
         
-        # Placeholder plot
+        # Placeholder plot (distribution synthétique)
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(8, 5))
-        x = np.linspace(0, 10, 100)
-        ax.hist(np.random.normal(5, 1, 1000), bins=30, alpha=0.7, label="Distribution")
-        ax.axvline(x=7, color='red', linestyle='--', label='Seuil')
-        ax.set_xlabel('Erreur de Reconstruction')
+        ax.hist(np.random.normal(0.6, 0.15, 300), bins=30, alpha=0.7, label="Dist. attendue")
+        ax.axvline(x=anomaly_threshold, color='red', linestyle='--', label='Seuil')
+        ax.set_xlabel('Erreur de reconstruction')
         ax.set_ylabel('Fréquence')
         ax.legend()
         st.pyplot(fig)

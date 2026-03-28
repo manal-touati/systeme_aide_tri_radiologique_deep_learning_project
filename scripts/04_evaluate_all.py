@@ -72,7 +72,7 @@ def load_supervised_model(
     Returns:
         Modèle chargé
     """
-    logger.info(f"📂 Chargement du modèle: {model_name} depuis {checkpoint_path}")
+    logger.info(f"Chargement du modele: {model_name} depuis {checkpoint_path}")
     
     # Créer le modèle
     if model_name == "cnn_simple":
@@ -90,7 +90,7 @@ def load_supervised_model(
             model = timm.create_model('efficientnet_b0', pretrained=False, in_chans=1)
             model.classifier = nn.Linear(model.num_features, num_classes)
         except ImportError:
-            logger.warning("⚠️ timm non installé, utilisation de ResNet50 par défaut")
+            logger.warning("timm non installe, utilisation de ResNet50 par defaut")
             model = TransferLearningModel(
                 model_name="resnet50",
                 num_classes=num_classes,
@@ -104,7 +104,7 @@ def load_supervised_model(
     if checkpoint_path.exists():
         checkpoint = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
-        logger.info(f"✅ Modèle chargé depuis {checkpoint_path}")
+        logger.info(f"Modele charge depuis {checkpoint_path}")
     else:
         raise FileNotFoundError(f"Checkpoint non trouvé: {checkpoint_path}")
     
@@ -130,7 +130,7 @@ def load_anomaly_model(
     Returns:
         Modèle chargé
     """
-    logger.info(f"📂 Chargement du modèle: {model_type} depuis {checkpoint_path}")
+    logger.info(f"Chargement du modele: {model_type} depuis {checkpoint_path}")
     
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint non trouvé: {checkpoint_path}")
@@ -148,7 +148,7 @@ def load_anomaly_model(
     
     # Charger les poids
     model.load_state_dict(checkpoint['model_state_dict'])
-    logger.info(f"✅ Modèle chargé depuis {checkpoint_path}")
+    logger.info(f"Modele charge depuis {checkpoint_path}")
     
     model = model.to(device)
     model.eval()
@@ -174,7 +174,7 @@ def evaluate_supervised_model(
     Returns:
         Dictionnaire des résultats d'évaluation
     """
-    logger.info(f"\n📊 Évaluation du modèle: {model_name}")
+    logger.info(f"\nEvaluation du modele: {model_name}")
     
     model.eval()
     all_logits = []
@@ -222,7 +222,7 @@ def evaluate_supervised_model(
     }
     
     # Afficher résumé
-    logger.info(f"✅ Résultats pour {model_name}:")
+    logger.info(f"Resultats pour {model_name}:")
     logger.info(f"  F1 (weighted): {global_metrics['f1_weighted']:.4f}")
     logger.info(f"  Precision (weighted): {global_metrics['precision_weighted']:.4f}")
     logger.info(f"  Recall (weighted): {global_metrics['recall_weighted']:.4f}")
@@ -252,7 +252,7 @@ def evaluate_anomaly_model(
     Returns:
         Dictionnaire des résultats d'évaluation
     """
-    logger.info(f"\n📊 Évaluation du modèle: {model_name}")
+    logger.info(f"\nEvaluation du modele: {model_name}")
     
     model.eval()
     anomaly_scores = []
@@ -298,7 +298,7 @@ def evaluate_anomaly_model(
     }
     
     # Afficher résumé
-    logger.info(f"✅ Résultats pour {model_name}:")
+    logger.info(f"Resultats pour {model_name}:")
     logger.info(f"  Anomaly Score Mean: {np.mean(anomaly_scores):.6f}")
     logger.info(f"  Anomaly Score Std: {np.std(anomaly_scores):.6f}")
     logger.info(f"  Anomaly Score Range: [{np.min(anomaly_scores):.6f}, {np.max(anomaly_scores):.6f}]")
@@ -329,7 +329,7 @@ def evaluate_all_models(
     results_path.mkdir(parents=True, exist_ok=True)
     
     logger.info("=" * 70)
-    logger.info("📊 ÉVALUATION COMPLÈTE DE TOUS LES MODÈLES")
+    logger.info("EVALUATION COMPLETE DE TOUS LES MODELES")
     logger.info("=" * 70)
     logger.info(f"Configuration:")
     logger.info(f"  Data dir: {data_dir}")
@@ -339,7 +339,7 @@ def evaluate_all_models(
     logger.info(f"  Device: {device}")
     
     # Charger les données
-    logger.info("\n📂 Chargement des données...")
+    logger.info("\nChargement des donnees...")
     X_train, y_train, X_val, y_val, X_test, y_test = load_chestmnist_data(
         data_dir=data_dir,
         target_size=64
@@ -372,7 +372,7 @@ def evaluate_all_models(
         checkpoint_path = models_path / f"{model_name}_best.pt"
         
         if not checkpoint_path.exists():
-            logger.warning(f"⚠️ Checkpoint non trouvé: {checkpoint_path}")
+            logger.warning(f"Checkpoint non trouve: {checkpoint_path}")
             continue
         
         try:
@@ -381,7 +381,7 @@ def evaluate_all_models(
             all_results['supervised_models'][model_name] = results
             supervised_results[model_name] = results['global_metrics']
         except Exception as e:
-            logger.error(f"❌ Erreur lors de l'évaluation de {model_name}: {e}")
+            logger.error(f"Erreur lors de l'evaluation de {model_name}: {e}")
     
     # Modèles d'anomalies
     anomaly_models = [
@@ -393,7 +393,7 @@ def evaluate_all_models(
         checkpoint_path = models_path / checkpoint_name
         
         if not checkpoint_path.exists():
-            logger.warning(f"⚠️ Checkpoint non trouvé: {checkpoint_path}")
+            logger.warning(f"Checkpoint non trouve: {checkpoint_path}")
             continue
         
         try:
@@ -405,12 +405,12 @@ def evaluate_all_models(
             )
             all_results['anomaly_models'][model_type] = results
         except Exception as e:
-            logger.error(f"❌ Erreur lors de l'évaluation de {model_type}: {e}")
+            logger.error(f"Erreur lors de l'evaluation de {model_type}: {e}")
     
     # Résumé comparatif
     if supervised_results:
         logger.info("\n" + "=" * 70)
-        logger.info("📊 RÉSUMÉ COMPARATIF DES MODÈLES SUPERVISÉS")
+        logger.info("RESUME COMPARATIF DES MODELES SUPERVISES")
         logger.info("=" * 70)
         
         comparison_data = []
@@ -456,13 +456,13 @@ def evaluate_all_models(
     
     with open(results_json_path, 'w') as f:
         json.dump(all_results, f, indent=2)
-    logger.info(f"\n✅ Résultats d'évaluation sauvegardés: {results_json_path}")
+    logger.info(f"\nResultats d'evaluation sauvegardes: {results_json_path}")
     
     # Sauvegarder un rapport texte
     report_path = results_path / "evaluation_report.txt"
     with open(report_path, 'w') as f:
         f.write("=" * 70 + "\n")
-        f.write("📊 RAPPORT D'ÉVALUATION DES MODÈLES\n")
+        f.write("RAPPORT D'EVALUATION DES MODELES\n")
         f.write("=" * 70 + "\n")
         f.write(f"Timestamp: {all_results['timestamp']}\n")
         f.write(f"Device: {all_results['device']}\n")
@@ -470,7 +470,7 @@ def evaluate_all_models(
         
         # Modèles supervisés
         if all_results.get('supervised_models'):
-            f.write("\n🧠 MODÈLES SUPERVISÉS\n")
+            f.write("\nMODELES SUPERVISES\n")
             f.write("-" * 70 + "\n")
             for model_name, results in all_results['supervised_models'].items():
                 metrics = results['global_metrics']
@@ -484,7 +484,7 @@ def evaluate_all_models(
         
         # Modèles d'anomalies
         if all_results.get('anomaly_models'):
-            f.write("\n\n🔍 MODÈLES D'ANOMALIES\n")
+            f.write("\n\nMODELES D'ANOMALIES\n")
             f.write("-" * 70 + "\n")
             for model_type, results in all_results['anomaly_models'].items():
                 stats = results['anomaly_scores_stats']
@@ -495,10 +495,10 @@ def evaluate_all_models(
                 f.write(f"  Median: {stats['median']:.6f}\n")
                 f.write(f"  IQR: [{stats['q25']:.6f}, {stats['q75']:.6f}]\n")
     
-    logger.info(f"✅ Rapport texte sauvegardé: {report_path}")
+    logger.info(f"Rapport texte sauvegarde: {report_path}")
     
     logger.info("\n" + "=" * 70)
-    logger.info("✅ Évaluation complète terminée!")
+    logger.info("Evaluation complete terminee!")
     logger.info("=" * 70)
     
     return all_results

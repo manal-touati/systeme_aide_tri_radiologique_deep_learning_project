@@ -86,18 +86,18 @@ def load_nih_data(data_dir: str = "./data", target_size: int = 64):
     
     if not data_path.exists():
         raise FileNotFoundError(
-            f"❌ Fichier non trouvé : {data_path}\n"
+            f"Fichier non trouve : {data_path}\n"
             f"   Lance d'abord: python scripts/05_prepare_nih_sample.py"
         )
     
-    logger.info(f"📂 Chargement depuis {data_path}")
+    logger.info(f"Chargement depuis {data_path}")
     data = np.load(data_path, allow_pickle=True)
     
     X_train = data['X_train']
     X_val = data['X_val']
     X_test = data['X_test']
     
-    logger.info(f"✅ Données chargées:")
+    logger.info(f"Donnees chargees:")
     logger.info(f"   Train: {X_train.shape}")
     logger.info(f"   Val: {X_val.shape}")
     logger.info(f"   Test: {X_test.shape}")
@@ -120,7 +120,7 @@ def create_dataloaders(X_train, X_val, X_test, batch_size=32, image_size=64):
     
     from PIL import Image
     
-    logger.info("🔄 Conversion en tensors...")
+    logger.info("Conversion en tensors...")
     X_train_t = to_tensor_dataset(X_train)
     X_val_t = to_tensor_dataset(X_val)
     X_test_t = to_tensor_dataset(X_test)
@@ -143,7 +143,7 @@ def create_dataloaders(X_train, X_val, X_test, batch_size=32, image_size=64):
         shuffle=False
     )
     
-    logger.info(f"✅ Dataloaders créés:")
+    logger.info(f"Dataloaders crees:")
     logger.info(f"   Train: {len(train_loader)} batches")
     logger.info(f"   Val: {len(val_loader)} batches")
     logger.info(f"   Test: {len(test_loader)} batches")
@@ -213,7 +213,7 @@ def main():
     args = parser.parse_args()
     
     logger.info("=" * 60)
-    logger.info("🎯 ENTRAÎNEMENT AUTOENCODER - ANOMALY DETECTION")
+    logger.info("ENTRAINEMENT AUTOENCODER - ANOMALY DETECTION")
     logger.info("=" * 60)
     logger.info(f"Configuration:")
     logger.info(f"  Epochs: {args.epochs}")
@@ -233,7 +233,7 @@ def main():
     )
     
     # 3. Create model
-    logger.info("🏗️ Création de l'autoencoder...")
+    logger.info("Creation de l'autoencoder...")
     model = SimpleAutoencoder(latent_dim=args.latent_dim)
     model = model.to(args.device)
     logger.info(f"   Paramètres: {sum(p.numel() for p in model.parameters()):,}")
@@ -244,7 +244,7 @@ def main():
     
     # 5. Training
     logger.info("")
-    logger.info("🚀 Début de l'entraînement...")
+    logger.info("Debut de l'entrainement...")
     logger.info("")
     
     best_val_loss = float('inf')
@@ -260,11 +260,11 @@ def main():
             save_path = "models/autoencoder_best.pt"
             Path("models").mkdir(exist_ok=True)
             torch.save(model.state_dict(), save_path)
-            logger.info(f"   ✅ Meilleur modèle sauvegardé")
+            logger.info(f"   Meilleur modele sauvegarde")
     
     # 6. Compute anomaly scores
     logger.info("")
-    logger.info("📊 Calcul des scores d'anomalie sur test set...")
+    logger.info("Calcul des scores d'anomalie sur test set...")
     
     # Load best model
     model.load_state_dict(torch.load("models/autoencoder_best.pt"))
@@ -273,7 +273,7 @@ def main():
     
     # Statistiques
     logger.info("")
-    logger.info("✅ Scores d'anomalie:")
+    logger.info("Scores d'anomalie:")
     logger.info(f"   Mean: {anomaly_scores.mean():.4f}")
     logger.info(f"   Std: {anomaly_scores.std():.4f}")
     logger.info(f"   Min: {anomaly_scores.min():.4f}")
@@ -295,7 +295,7 @@ def main():
     
     logger.info("")
     logger.info("=" * 60)
-    logger.info("✅ ENTRAÎNEMENT TERMINÉ")
+    logger.info("ENTRAINEMENT TERMINE")
     logger.info("=" * 60)
     logger.info(f"Modèle sauvegardé : models/autoencoder_best.pt")
     logger.info(f"Résultats sauvegardés : {results_path}")

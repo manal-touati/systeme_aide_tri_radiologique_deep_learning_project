@@ -6,7 +6,7 @@ Prépare un sous-ensemble réel du dataset NIH CXR14 à partir des fichiers
 téchargés manuellement (CSV + images). Pas de génération synthétique.
 
 Usage:
-    python scripts/05_prepare_nih_sample.py --num_samples 1000 \
+    python scripts/05_prepare_nih_sample.py --num_samples 5000 \
         --csv_path ./data/raw/Data_Entry_2017.csv \
         --images_dir ./data/raw/images_001 \
         --target_size 64
@@ -40,13 +40,13 @@ def load_nih_metadata(csv_path: Path) -> pd.DataFrame:
             "Place Data_Entry_2017.csv dans data/raw/ ou précise --csv_path"
         )
     df = pd.read_csv(csv_path)
-    logger.info(f"✅ Métadonnées chargées: {csv_path} ({len(df)} lignes)")
+    logger.info(f"Metadonnees chargees: {csv_path} ({len(df)} lignes)")
     return df
 
 
 def sample_stratified(df: pd.DataFrame, num_samples: int = 1000):
     """Échantillonnage simple pour garder de la diversité de labels."""
-    logger.info(f"🎲 Échantillonnage de {num_samples} lignes…")
+    logger.info(f"Echantillonnage de {num_samples} lignes…")
 
     pathology_counts = df['Finding Labels'].value_counts()
     logger.info(f"   Pathologies uniques: {len(pathology_counts)}")
@@ -69,7 +69,7 @@ def sample_stratified(df: pd.DataFrame, num_samples: int = 1000):
         extra = df[~df.index.isin(df_sampled.index)].sample(n=remaining, random_state=42)
         df_sampled = pd.concat([df_sampled, extra])
 
-    logger.info(f"✅ {len(df_sampled)} images sélectionnées")
+    logger.info(f"{len(df_sampled)} images selectionnees")
     return df_sampled
 
 
@@ -83,7 +83,7 @@ def load_images(df_sampled: pd.DataFrame, images_dir: Path, target_size: int = 6
     # Indexer tous les fichiers images (png/jpg/jpeg) récursivement
     all_files = list(images_dir.rglob('*.png')) + list(images_dir.rglob('*.jpg')) + list(images_dir.rglob('*.jpeg'))
     path_map = {p.name: p for p in all_files}
-    logger.info(f"🔍 Indexation images dans {images_dir} (récursif) : {len(path_map)} fichiers trouvés")
+    logger.info(f"Indexation images dans {images_dir} (recursif) : {len(path_map)} fichiers trouves")
 
     for _, row in tqdm(df_sampled.iterrows(), total=len(df_sampled), desc="Chargement"):
         fname = row['Image Index']
@@ -101,11 +101,11 @@ def load_images(df_sampled: pd.DataFrame, images_dir: Path, target_size: int = 6
         labels_text.append(row['Finding Labels'])
 
     images = np.array(images, dtype=np.uint8)
-    logger.info(f"✅ {len(images)} images chargées depuis {images_dir}")
+    logger.info(f"{len(images)} images chargees depuis {images_dir}")
     if missing:
-        logger.info(f"ℹ️ {missing} fichiers manquants (nom absent de l'index)")
+        logger.info(f"{missing} fichiers manquants (nom absent de l'index)")
     if failed:
-        logger.info(f"ℹ️ {failed} fichiers ignorés (erreurs de lecture ou corruption)")
+        logger.info(f"{failed} fichiers ignores (erreurs de lecture ou corruption)")
     return images, labels_text
 
 
@@ -116,7 +116,7 @@ def save_processed_data(images, labels_text, df_sampled, data_dir: Path, target_
 
     output_file = output_dir / f"nih_sample_{target_size}x{target_size}.npz"
 
-    logger.info(f"💾 Sauvegarde dans {output_file}...")
+    logger.info(f"Sauvegarde dans {output_file}...")
 
     n = len(images)
     train_end = int(0.7 * n)
@@ -143,7 +143,7 @@ def save_processed_data(images, labels_text, df_sampled, data_dir: Path, target_
     csv_file = output_dir / "nih_sample_metadata.csv"
     df_sampled.to_csv(csv_file, index=False)
 
-    logger.info(f"✅ Données sauvegardées:")
+    logger.info(f"Donnees sauvegardees:")
     logger.info(f"   Train: {X_train.shape}")
     logger.info(f"   Val: {X_val.shape}")
     logger.info(f"   Test: {X_test.shape}")
@@ -167,7 +167,7 @@ def main():
     args = parser.parse_args()
     
     logger.info("=" * 60)
-    logger.info("📦 PRÉPARATION ÉCHANTILLON NIH (DATASET 2)")
+    logger.info("PREPARATION ECHANTILLON NIH (DATASET 2)")
     logger.info("=" * 60)
     logger.info(f"Configuration:")
     logger.info(f"  Nombre d'images: {args.num_samples}")
@@ -199,9 +199,9 @@ def main():
     
     logger.info("")
     logger.info("=" * 60)
-    logger.info("✅ PRÉPARATION TERMINÉE")
+    logger.info("PREPARATION TERMINEE")
     logger.info("=" * 60)
-    logger.info(f"📁 Fichier créé : {output_file}")
+    logger.info(f"Fichier cree : {output_file}")
     logger.info("")
     logger.info("Prochaines étapes:")
     logger.info("  1. Entraîner autoencoder:")
